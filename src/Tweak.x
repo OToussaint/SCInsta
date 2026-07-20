@@ -88,19 +88,24 @@ BOOL dmVisualMsgsViewedButtonEnabled = false;
 
 %hook IGDSLauncherConfig
 - (_Bool)isLiquidGlassInAppNotificationEnabled {
-    return [SCIUtils liquidGlassEnabledBool:%orig];
+    _Bool orig = %orig;
+    return [SCIUtils liquidGlassEnabledBool:orig];
 }
 - (_Bool)isLiquidGlassContextMenuEnabled{
-    return [SCIUtils liquidGlassEnabledBool:%orig];
+    _Bool orig = %orig;
+    return [SCIUtils liquidGlassEnabledBool:orig];
 }
 - (_Bool)isLiquidGlassToastEnabled {
-    return [SCIUtils liquidGlassEnabledBool:%orig];
+    _Bool orig = %orig;
+    return [SCIUtils liquidGlassEnabledBool:orig];
 }
 - (_Bool)isLiquidGlassToastPeekEnabled {
-    return [SCIUtils liquidGlassEnabledBool:%orig];
+    _Bool orig = %orig;
+    return [SCIUtils liquidGlassEnabledBool:orig];
 }
 - (_Bool)isLiquidGlassAlertDialogEnabled {
-    return [SCIUtils liquidGlassEnabledBool:%orig];
+    _Bool orig = %orig;
+    return [SCIUtils liquidGlassEnabledBool:orig];
 }
 %end
 
