@@ -1,10 +1,6 @@
 name: Build SCInsta tweak for Rootless
 
 on:
-    push:
-        branches:
-            - 'main'
-            - 'dev'
     workflow_dispatch:
   
 concurrency:
