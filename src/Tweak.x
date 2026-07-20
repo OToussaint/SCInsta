@@ -7,8 +7,8 @@
 
 // Screenshot handlers
 
-#define VOID_HANDLESCREENSHOT(orig) [SCIUtils getBoolPref:@"remove_screenshot_alert"] ? nil : orig;
-#define NONVOID_HANDLESCREENSHOT(orig) return VOID_HANDLESCREENSHOT(orig)
+#define VOID_HANDLESCREENSHOT(orig) ([SCIUtils getBoolPref:@"remove_screenshot_alert"] ? nil : (orig))
+#define NONVOID_HANDLESCREENSHOT(orig) if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) return nil; else return (orig)
 
 ///////////////////////////////////////////////////////////
 
@@ -132,20 +132,40 @@ shouldPersistLastBugReportId:(id)arg6
 
 // Disable anti-screenshot feature on visual messages
 %hook IGStoryViewerContainerView
-- (void)setShouldBlockScreenshot:(BOOL)arg1 viewModel:(id)arg2 { VOID_HANDLESCREENSHOT(%orig); }
+- (void)setShouldBlockScreenshot:(BOOL)arg1 viewModel:(id)arg2 {
+    if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        return;
+    }
+    %orig(arg1, arg2);
+}
 %end
 
 // Disable screenshot logging/detection
 %hook IGDirectVisualMessageViewerSession
-- (id)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 { NONVOID_HANDLESCREENSHOT(%orig); }
+- (id)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 {
+    if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        return nil;
+    }
+    return %orig(arg1, arg2, arg3);
+}
 %end
 
 %hook IGDirectVisualMessageReplayService
-- (id)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 { NONVOID_HANDLESCREENSHOT(%orig); }
+- (id)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 {
+    if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        return nil;
+    }
+    return %orig(arg1, arg2, arg3);
+}
 %end
 
 %hook IGDirectVisualMessageReportService
-- (id)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 { NONVOID_HANDLESCREENSHOT(%orig); }
+- (id)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 {
+    if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        return nil;
+    }
+    return %orig(arg1, arg2, arg3);
+}
 %end
 
 %hook IGDirectVisualMessageScreenshotSafetyLogger
@@ -160,32 +180,77 @@ shouldPersistLastBugReportId:(id)arg6
 %end
 
 %hook IGScreenshotObserver
-- (id)initForController:(id)arg1 { NONVOID_HANDLESCREENSHOT(%orig); }
+- (id)initForController:(id)arg1 {
+    if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        return nil;
+    }
+    return %orig(arg1);
+}
 %end
 
 %hook IGScreenshotObserverDelegate
-- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 { VOID_HANDLESCREENSHOT(%orig); }
-- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 { VOID_HANDLESCREENSHOT(%orig); }
+- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1);
+    }
+}
+- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1, arg2);
+    }
+}
 %end
 
 %hook IGDirectMediaViewerViewController
-- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 { VOID_HANDLESCREENSHOT(%orig); }
-- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 { VOID_HANDLESCREENSHOT(%orig); }
+- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1);
+    }
+}
+- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1, arg2);
+    }
+}
 %end
 
 %hook IGStoryViewerViewController
-- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 { VOID_HANDLESCREENSHOT(%orig); }
-- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 { VOID_HANDLESCREENSHOT(%orig); }
+- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1);
+    }
+}
+- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1, arg2);
+    }
+}
 %end
 
 %hook IGSundialFeedViewController
-- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 { VOID_HANDLESCREENSHOT(%orig); }
-- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 { VOID_HANDLESCREENSHOT(%orig); }
+- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1);
+    }
+}
+- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1, arg2);
+    }
+}
 %end
 
 %hook IGDirectVisualMessageViewerController
-- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 { VOID_HANDLESCREENSHOT(%orig); }
-- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 { VOID_HANDLESCREENSHOT(%orig); }
+- (void)screenshotObserverDidSeeScreenshotTaken:(id)arg1 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1);
+    }
+}
+- (void)screenshotObserverDidSeeActiveScreenCapture:(id)arg1 event:(NSInteger)arg2 {
+    if (![SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
+        %orig(arg1, arg2);
+    }
+}
 %end
 
 /////////////////////////////////////////////////////////////////////////////
