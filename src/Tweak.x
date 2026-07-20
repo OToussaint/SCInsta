@@ -660,7 +660,8 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)UFIButtonBarDidTapOnLike:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm"]) {
         NSLog(@"[SCInsta] Confirm post like triggered");
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        void (^origBlock)(void) = ^{ %orig; };
+        [SCIUtils showConfirmation:origBlock];
     }
     else {
         %orig;
@@ -670,7 +671,8 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)UFIButtonBarDidTapOnRepost:(id)arg1 {
     if ([SCIUtils getBoolPref:@"repost_confirm"]) {
         NSLog(@"[SCInsta] Confirm repost triggered");
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        void (^origBlock)(void) = ^{ %orig; };
+        [SCIUtils showConfirmation:origBlock];
     }
     else {
         %orig;
