@@ -11,6 +11,14 @@ NSString *SCIVersionString = @"v1.1.1";
 // Variables that work across features
 BOOL dmVisualMsgsViewedButtonEnabled = false;
 
+// Raw original IMPs captured before Logos swizzles them.
+// Needed because %orig cannot be reliably expanded when nested
+// inside a block literal that is itself an argument to a message send.
+static void (*orig_UFIButtonBarDidTapOnLike)(id, SEL, id);
+static void (*orig_UFIButtonBarDidTapOnRepost)(id, SEL, id);
+static void (*orig_didTapLikeButton)(id, SEL, id);
+static void (*orig_didTapRepostButton)(id, SEL, id);
+
 // Tweak first-time setup
 %hook IGInstagramAppDelegate
 - (_Bool)application:(UIApplication *)application willFinishLaunchingWithOptions:(id)arg2 {
@@ -37,7 +45,7 @@ BOOL dmVisualMsgsViewedButtonEnabled = false;
         @"doom_scrolling_reel_count": @(1)
     };
     [[NSUserDefaults standardUserDefaults] registerDefaults:sciDefaults];
-    
+
     // Override instagram defaults
     if ([SCIUtils getBoolPref:@"liquid_glass_buttons"]) {
         [[NSUserDefaults standardUserDefaults] setValue:@(YES) forKey:@"instagram.override.project.lucent.navigation"];
@@ -79,7 +87,7 @@ BOOL dmVisualMsgsViewedButtonEnabled = false;
 
 - (void)applicationDidBecomeActive:(id)arg1 {
     %orig;
-    
+
     if ([SCIUtils getBoolPref:@"flex_app_start"]) {
         [[objc_getClass("FLEXManager") sharedManager] showExplorer];
     }
@@ -264,7 +272,7 @@ shouldPersistLastBugReportId:(id)arg6
     for (id obj in originalObjs) {
         BOOL shouldHide = NO;
 
-        // Section header 
+        // Section header
         if ([obj isKindOfClass:%c(IGLabelItemViewModel)]) {
 
             // Broadcast channels
@@ -293,7 +301,7 @@ shouldPersistLastBugReportId:(id)arg6
                     shouldHide = YES;
                 }
             }
-            
+
         }
 
         // AI agents section
@@ -322,7 +330,7 @@ shouldPersistLastBugReportId:(id)arg6
                     shouldHide = YES;
                 }
             }
-            
+
             // Meta AI (special section types)
             else if (([obj sectionType] == 20) || [obj sectionType] == 18) {
                 if ([SCIUtils getBoolPref:@"hide_meta_ai"]) {
@@ -364,7 +372,7 @@ shouldPersistLastBugReportId:(id)arg6
 
         // Meta AI suggested user in direct new message view
         if ([SCIUtils getBoolPref:@"hide_meta_ai"]) {
-            
+
             if ([obj isKindOfClass:%c(IGDirectCreateChatCellViewModel)]) {
 
                 // "AI Chats"
@@ -386,7 +394,7 @@ shouldPersistLastBugReportId:(id)arg6
                 }
 
             }
-            
+
         }
 
         // Invite friends to insta contacts upsell
@@ -419,7 +427,7 @@ shouldPersistLastBugReportId:(id)arg6
 
         // Section header
         if ([obj isKindOfClass:%c(IGDirectInboxHeaderCellViewModel)]) {
-            
+
             // "Suggestions" header
             if ([[obj title] isEqualToString:@"Suggestions"]) {
                 if ([SCIUtils getBoolPref:@"no_suggested_users"]) {
@@ -490,7 +498,7 @@ shouldPersistLastBugReportId:(id)arg6
         // Meta AI
         if ([SCIUtils getBoolPref:@"hide_meta_ai"]) {
 
-            // Section header 
+            // Section header
             if ([obj isKindOfClass:%c(IGLabelItemViewModel)]) {
 
                 // "Ask Meta AI" search results header
@@ -518,7 +526,7 @@ shouldPersistLastBugReportId:(id)arg6
                     if ([SCIUtils getBoolPref:@"hide_meta_ai"]) {
                         shouldHide = YES;
                     }
-                    
+
                 }
 
                 // Meta AI user account in search results
@@ -529,13 +537,13 @@ shouldPersistLastBugReportId:(id)arg6
                 }
 
             }
-            
+
         }
 
         // No suggested users
         if ([SCIUtils getBoolPref:@"no_suggested_users"]) {
 
-            // Section header 
+            // Section header
             if ([obj isKindOfClass:%c(IGLabelItemViewModel)]) {
 
                 // "Suggested for you" search results header
@@ -580,7 +588,7 @@ shouldPersistLastBugReportId:(id)arg6
         if ([SCIUtils getBoolPref:@"no_suggested_users"]) {
             if ([obj isKindOfClass:%c(IGStoryTrayViewModel)]) {
                 NSNumber *type = [((IGStoryTrayViewModel *)obj) valueForKey:@"type"];
-                
+
                 // 8/9 looks to be the types for recommended stories
                 if ([type isEqual:@(8)] || [type isEqual:@(9)]) {
                     NSLog(@"[SCInsta] Hiding suggested users: story tray");
@@ -632,7 +640,7 @@ shouldPersistLastBugReportId:(id)arg6
             [[obj valueForKey:@"title"] isEqualToString:@"AI images"]
             || [[obj valueForKey:@"title"] isEqualToString:@"Meta AI"]
         ) {
-            
+
             if ([SCIUtils getBoolPref:@"hide_meta_ai"]) {
                 NSLog(@"[SCInsta] Hiding meta ai from IGDS menu");
 
@@ -655,44 +663,54 @@ shouldPersistLastBugReportId:(id)arg6
 /////////////////////////////////////////////////////////////////////////////
 
 // Confirm buttons
+//
+// NOTE: these hooks call showConfirmation: with a block that must invoke the
+// ORIGINAL Instagram implementation if the user confirms. %orig cannot be
+// expanded reliably inside a block that is itself nested inside a message
+// send argument, so we capture the real IMP in %ctor (bottom of file) and
+// call it directly by its C function pointer instead.
 
 %hook IGFeedItemUFICell
 - (void)UFIButtonBarDidTapOnLike:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm"]) {
         NSLog(@"[SCInsta] Confirm post like triggered");
-        void (^origBlock)(void) = ^{ %orig; };
-        [SCIUtils showConfirmation:origBlock];
+        id selfCopy = self;
+        SEL cmdCopy = _cmd;
+        [SCIUtils showConfirmation:^(void) {
+            orig_UFIButtonBarDidTapOnLike(selfCopy, cmdCopy, arg1);
+        }];
+        return;
     }
-    else {
-        %orig;
-    }  
+    %orig;
 }
 
 - (void)UFIButtonBarDidTapOnRepost:(id)arg1 {
     if ([SCIUtils getBoolPref:@"repost_confirm"]) {
         NSLog(@"[SCInsta] Confirm repost triggered");
-        void (^origBlock)(void) = ^{ %orig; };
-        [SCIUtils showConfirmation:origBlock];
+        id selfCopy = self;
+        SEL cmdCopy = _cmd;
+        [SCIUtils showConfirmation:^(void) {
+            orig_UFIButtonBarDidTapOnRepost(selfCopy, cmdCopy, arg1);
+        }];
+        return;
     }
-    else {
-        %orig;
-    }
+    %orig;
 }
 
 - (void)UFIButtonBarDidLongPressOnRepost:(id)arg1 {
-    if ([SCIUtils getBoolPref:@"repost_confirm"]) {
-        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
+    if (![SCIUtils getBoolPref:@"repost_confirm"]) {
+        %orig;
     }
     else {
-        %orig;
+        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
 }
 - (void)UFIButtonBarDidLongPressOnRepost:(id)arg1 withGestureRecognizer:(id)arg2 {
-    if ([SCIUtils getBoolPref:@"repost_confirm"]) {
-        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
+    if (![SCIUtils getBoolPref:@"repost_confirm"]) {
+        %orig;
     }
     else {
-        %orig;
+        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
 }
 %end
@@ -701,38 +719,44 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)_didTapLikeButton:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm_reels"]) {
         NSLog(@"[SCInsta] Confirm reels like triggered");
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        id selfCopy = self;
+        SEL cmdCopy = _cmd;
+        [SCIUtils showConfirmation:^(void) {
+            orig_didTapLikeButton(selfCopy, cmdCopy, arg1);
+        }];
+        return;
     }
-    else {
-        %orig;
-    }
+    %orig;
 }
 
 - (void)_didLongPressLikeButton:(id)arg1 {
-    if ([SCIUtils getBoolPref:@"like_confirm_reels"]) {
-        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
+    if (![SCIUtils getBoolPref:@"like_confirm_reels"]) {
+        %orig;
     }
     else {
-        %orig;
+        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
 }
 
 - (void)_didTapRepostButton:(id)arg1 {
     if ([SCIUtils getBoolPref:@"repost_confirm"]) {
         NSLog(@"[SCInsta] Confirm repost triggered");
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        id selfCopy = self;
+        SEL cmdCopy = _cmd;
+        [SCIUtils showConfirmation:^(void) {
+            orig_didTapRepostButton(selfCopy, cmdCopy, arg1);
+        }];
+        return;
     }
-    else {
-        %orig;
-    }
+    %orig;
 }
 
 - (void)_didLongPressRepostButton:(id)arg1 {
-    if ([SCIUtils getBoolPref:@"repost_confirm"]) {
-        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
+    if (![SCIUtils getBoolPref:@"repost_confirm"]) {
+        %orig;
     }
     else {
-        %orig;
+        NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
 }
 %end
@@ -743,7 +767,7 @@ shouldPersistLastBugReportId:(id)arg6
 %hook IGRootViewController
 - (void)viewDidLoad {
     %orig;
-    
+
     // Recognize 5-finger long press
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
     longPress.minimumPressDuration = 1;
@@ -774,3 +798,29 @@ shouldPersistLastBugReportId:(id)arg6
     return %orig;
 }
 %end
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Capture the real original IMPs before Logos installs the hooked versions,
+// so the confirm-button blocks above can call them directly.
+%ctor {
+    Class ufiCell = objc_getClass("IGFeedItemUFICell");
+    if (ufiCell) {
+        Method mLike = class_getInstanceMethod(ufiCell, @selector(UFIButtonBarDidTapOnLike:));
+        if (mLike) orig_UFIButtonBarDidTapOnLike = (void (*)(id, SEL, id))method_getImplementation(mLike);
+
+        Method mRepost = class_getInstanceMethod(ufiCell, @selector(UFIButtonBarDidTapOnRepost:));
+        if (mRepost) orig_UFIButtonBarDidTapOnRepost = (void (*)(id, SEL, id))method_getImplementation(mRepost);
+    }
+
+    Class sundialUFI = objc_getClass("IGSundialViewerVerticalUFI");
+    if (sundialUFI) {
+        Method mReelLike = class_getInstanceMethod(sundialUFI, @selector(_didTapLikeButton:));
+        if (mReelLike) orig_didTapLikeButton = (void (*)(id, SEL, id))method_getImplementation(mReelLike);
+
+        Method mReelRepost = class_getInstanceMethod(sundialUFI, @selector(_didTapRepostButton:));
+        if (mReelRepost) orig_didTapRepostButton = (void (*)(id, SEL, id))method_getImplementation(mReelRepost);
+    }
+
+    %init;
+}
