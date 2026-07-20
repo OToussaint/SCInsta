@@ -655,20 +655,20 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)UFIButtonBarDidTapOnLike:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm"]) {
         NSLog(@"[SCInsta] Confirm post like triggered");
-        [SCIUtils showConfirmation:^(void) { %orig(arg1); }];
+        [SCIUtils showConfirmation:^(void) { %orig; }];
     }
     else {
-        %orig(arg1);
+        %orig;
     }  
 }
 
 - (void)UFIButtonBarDidTapOnRepost:(id)arg1 {
     if ([SCIUtils getBoolPref:@"repost_confirm"]) {
         NSLog(@"[SCInsta] Confirm repost triggered");
-        [SCIUtils showConfirmation:^(void) { %orig(arg1); }];
+        [SCIUtils showConfirmation:^(void) { %orig; }];
     }
     else {
-        %orig(arg1);
+        %orig;
     }
 }
 
@@ -677,7 +677,7 @@ shouldPersistLastBugReportId:(id)arg6
         NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
     else {
-        %orig(arg1);
+        %orig;
     }
 }
 - (void)UFIButtonBarDidLongPressOnRepost:(id)arg1 withGestureRecognizer:(id)arg2 {
@@ -685,7 +685,7 @@ shouldPersistLastBugReportId:(id)arg6
         NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
     else {
-        %orig(arg1, arg2);
+        %orig;
     }
 }
 %end
@@ -694,10 +694,10 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)_didTapLikeButton:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm_reels"]) {
         NSLog(@"[SCInsta] Confirm reels like triggered");
-        [SCIUtils showConfirmation:^(void) { %orig(arg1); }];
+        [SCIUtils showConfirmation:^(void) { %orig; }];
     }
     else {
-        %orig(arg1);
+        %orig;
     }
 }
 
@@ -706,17 +706,17 @@ shouldPersistLastBugReportId:(id)arg6
         NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
     else {
-        %orig(arg1);
+        %orig;
     }
 }
 
 - (void)_didTapRepostButton:(id)arg1 {
     if ([SCIUtils getBoolPref:@"repost_confirm"]) {
         NSLog(@"[SCInsta] Confirm repost triggered");
-        [SCIUtils showConfirmation:^(void) { %orig(arg1); }];
+        [SCIUtils showConfirmation:^(void) { %orig; }];
     }
     else {
-        %orig(arg1);
+        %orig;
     }
 }
 
@@ -725,7 +725,7 @@ shouldPersistLastBugReportId:(id)arg6
         NSLog(@"[SCInsta] Confirm repost triggered (long press ignored)");
     }
     else {
-        %orig(arg1);
+        %orig;
     }
 }
 %end
