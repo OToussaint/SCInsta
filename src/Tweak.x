@@ -5,13 +5,6 @@
 
 ///////////////////////////////////////////////////////////
 
-// Screenshot handlers
-
-#define VOID_HANDLESCREENSHOT(orig) ([SCIUtils getBoolPref:@"remove_screenshot_alert"] ? nil : (orig))
-#define NONVOID_HANDLESCREENSHOT(orig) if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) return nil; else return (orig)
-
-///////////////////////////////////////////////////////////
-
 // * Tweak version *
 NSString *SCIVersionString = @"v1.1.1";
 
@@ -662,8 +655,9 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)UFIButtonBarDidTapOnLike:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm"]) {
         NSLog(@"[SCInsta] Confirm post like triggered");
-
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        [SCIUtils showConfirmation:^(void) { 
+            [self UFIButtonBarDidTapOnLike:arg1];
+        }];
     }
     else {
         return %orig;
@@ -673,8 +667,9 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)UFIButtonBarDidTapOnRepost:(id)arg1 {
     if ([SCIUtils getBoolPref:@"repost_confirm"]) {
         NSLog(@"[SCInsta] Confirm repost triggered");
-
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        [SCIUtils showConfirmation:^(void) { 
+            [self UFIButtonBarDidTapOnRepost:arg1];
+        }];
     }
     else {
         return %orig;
@@ -703,8 +698,9 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)_didTapLikeButton:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm_reels"]) {
         NSLog(@"[SCInsta] Confirm reels like triggered");
-
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        [SCIUtils showConfirmation:^(void) { 
+            [self _didTapLikeButton:arg1];
+        }];
     }
     else {
         return %orig;
@@ -723,8 +719,9 @@ shouldPersistLastBugReportId:(id)arg6
 - (void)_didTapRepostButton:(id)arg1 {
     if ([SCIUtils getBoolPref:@"repost_confirm"]) {
         NSLog(@"[SCInsta] Confirm repost triggered");
-
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        [SCIUtils showConfirmation:^(void) { 
+            [self _didTapRepostButton:arg1];
+        }];
     }
     else {
         return %orig;
