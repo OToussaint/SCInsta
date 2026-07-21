@@ -1,6 +1,17 @@
 #import "../../Utils.h"
 #import "../../InstagramHeaders.h"
 
+// Raw original IMPs captured before Logos swizzles them.
+// Needed because %orig cannot be reliably expanded when used as an argument
+// inside another function call (parenthesis balancing breaks in the Logos expansion).
+static NSArray *(*orig_mainFeedObjectsForListAdapter)(id, SEL, id);
+static NSArray *(*orig_sundialFeedObjectsForListAdapter)(id, SEL, id);
+static NSArray *(*orig_contextualFeedObjectsForListAdapter)(id, SEL, id);
+static NSArray *(*orig_videoFeedObjectsForListAdapter)(id, SEL, id);
+static NSArray *(*orig_chainingFeedObjectsForListAdapter)(id, SEL, id);
+static NSArray *(*orig_exploreObjectsForListAdapter)(id, SEL, id);
+static NSArray *(*orig_swiftExploreObjectsForListAdapter)(id, SEL, id);
+
 static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
     NSArray *originalObjs = list;
     NSMutableArray *filteredObjs = [NSMutableArray arrayWithCapacity:[originalObjs count]];
@@ -116,7 +127,7 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 // Suggested posts/reels
 %hook IGMainFeedListAdapterDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
-    NSArray *filteredObjs = removeItemsInList(%orig, YES);
+    NSArray *filteredObjs = removeItemsInList(orig_mainFeedObjectsForListAdapter(self, _cmd, arg1), YES);
 
     // Remove loading spinner at end of feed (if 5 or less items in feed)
     NSUInteger arrayLength = [filteredObjs count];
@@ -134,7 +145,7 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %end
 %hook IGSundialFeedDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
-    NSArray *filteredList = removeItemsInList(%orig, NO);
+    NSArray *filteredList = removeItemsInList(orig_sundialFeedObjectsForListAdapter(self, _cmd, arg1), NO);
 
     if ([SCIUtils getBoolPref:@"prevent_doom_scrolling"]) {
         double reelCount = [SCIUtils getDoublePref:@"doom_scrolling_reel_count"];
@@ -147,7 +158,7 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGContextualFeedViewController
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        return removeItemsInList(orig_contextualFeedObjectsForListAdapter(self, _cmd, arg1), NO);
     }
 
     return %orig;
@@ -156,7 +167,7 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGVideoFeedViewController
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        return removeItemsInList(orig_videoFeedObjectsForListAdapter(self, _cmd, arg1), NO);
     }
 
     return %orig;
@@ -165,7 +176,7 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGChainingFeedViewController
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        return removeItemsInList(orig_chainingFeedObjectsForListAdapter(self, _cmd, arg1), NO);
     }
 
     return %orig;
@@ -260,7 +271,7 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGExploreListKitDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        return removeItemsInList(orig_exploreObjectsForListAdapter(self, _cmd, arg1), NO);
     }
 
     return %orig;
@@ -270,7 +281,7 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook _TtC28IGExploreViewControllerSwift26IGExploreListKitDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        return removeItemsInList(orig_swiftExploreObjectsForListAdapter(self, _cmd, arg1), NO);
     }
 
     return %orig;
@@ -332,3 +343,49 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
     return;
 }
 %end
+
+%ctor {
+    Class mainFeed = objc_getClass("IGMainFeedListAdapterDataSource");
+    if (mainFeed) {
+        Method m = class_getInstanceMethod(mainFeed, @selector(objectsForListAdapter:));
+        if (m) orig_mainFeedObjectsForListAdapter = (NSArray *(*)(id, SEL, id))method_getImplementation(m);
+    }
+
+    Class sundialFeed = objc_getClass("IGSundialFeedDataSource");
+    if (sundialFeed) {
+        Method m = class_getInstanceMethod(sundialFeed, @selector(objectsForListAdapter:));
+        if (m) orig_sundialFeedObjectsForListAdapter = (NSArray *(*)(id, SEL, id))method_getImplementation(m);
+    }
+
+    Class contextualFeed = objc_getClass("IGContextualFeedViewController");
+    if (contextualFeed) {
+        Method m = class_getInstanceMethod(contextualFeed, @selector(objectsForListAdapter:));
+        if (m) orig_contextualFeedObjectsForListAdapter = (NSArray *(*)(id, SEL, id))method_getImplementation(m);
+    }
+
+    Class videoFeed = objc_getClass("IGVideoFeedViewController");
+    if (videoFeed) {
+        Method m = class_getInstanceMethod(videoFeed, @selector(objectsForListAdapter:));
+        if (m) orig_videoFeedObjectsForListAdapter = (NSArray *(*)(id, SEL, id))method_getImplementation(m);
+    }
+
+    Class chainingFeed = objc_getClass("IGChainingFeedViewController");
+    if (chainingFeed) {
+        Method m = class_getInstanceMethod(chainingFeed, @selector(objectsForListAdapter:));
+        if (m) orig_chainingFeedObjectsForListAdapter = (NSArray *(*)(id, SEL, id))method_getImplementation(m);
+    }
+
+    Class exploreDataSource = objc_getClass("IGExploreListKitDataSource");
+    if (exploreDataSource) {
+        Method m = class_getInstanceMethod(exploreDataSource, @selector(objectsForListAdapter:));
+        if (m) orig_exploreObjectsForListAdapter = (NSArray *(*)(id, SEL, id))method_getImplementation(m);
+    }
+
+    Class swiftExploreDataSource = objc_getClass("_TtC28IGExploreViewControllerSwift26IGExploreListKitDataSource");
+    if (swiftExploreDataSource) {
+        Method m = class_getInstanceMethod(swiftExploreDataSource, @selector(objectsForListAdapter:));
+        if (m) orig_swiftExploreObjectsForListAdapter = (NSArray *(*)(id, SEL, id))method_getImplementation(m);
+    }
+
+    %init;
+}
