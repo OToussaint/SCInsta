@@ -36,9 +36,7 @@ static void (*orig_directThreadDidTapLike)(id, SEL);
         [SCIUtils showConfirmation:^(void) {                      \
             origFunc(selfCopy, cmdCopy, ##__VA_ARGS__);            \
         }];                                                       \
-    }                                                             \
-    else {                                                        \
-        %orig;                                                    \
+        return;                                                   \
     }
 
 #define CONFIRMREELSLIKE(origFunc, ...)                           \
@@ -49,9 +47,7 @@ static void (*orig_directThreadDidTapLike)(id, SEL);
         [SCIUtils showConfirmation:^(void) {                      \
             origFunc(selfCopy, cmdCopy, ##__VA_ARGS__);            \
         }];                                                       \
-    }                                                             \
-    else {                                                        \
-        %orig;                                                    \
+        return;                                                   \
     }
 
 ///////////////////////////////////////////////////////////
@@ -60,16 +56,19 @@ static void (*orig_directThreadDidTapLike)(id, SEL);
 %hook IGUFIButtonBarView
 - (void)_onLikeButtonPressed:(id)arg1 {
     CONFIRMPOSTLIKE(orig_ufiBarOnLikePressed, arg1);
+    %orig;
 }
 %end
 %hook IGFeedPhotoView
 - (void)_onDoubleTap:(id)arg1 {
     CONFIRMPOSTLIKE(orig_feedPhotoOnDoubleTap, arg1);
+    %orig;
 }
 %end
 %hook IGVideoPlayerOverlayContainerView
 - (void)_handleDoubleTapGesture:(id)arg1 {
     CONFIRMPOSTLIKE(orig_videoPlayerHandleDoubleTap, arg1);
+    %orig;
 }
 %end
 
@@ -77,28 +76,35 @@ static void (*orig_directThreadDidTapLike)(id, SEL);
 %hook IGSundialViewerVideoCell
 - (void)controlsOverlayControllerDidTapLikeButton:(id)arg1 {
     CONFIRMREELSLIKE(orig_videoCellDidTapLike, arg1);
+    %orig;
 }
 - (void)controlsOverlayControllerDidLongPressLikeButton:(id)arg1 gestureRecognizer:(id)arg2 {
     CONFIRMREELSLIKE(orig_videoCellDidLongPressLike, arg1, arg2);
+    %orig;
 }
 - (void)gestureController:(id)arg1 didObserveDoubleTap:(id)arg2 {
     CONFIRMREELSLIKE(orig_videoCellGestureDoubleTap, arg1, arg2);
+    %orig;
 }
 %end
 %hook IGSundialViewerPhotoCell
 - (void)controlsOverlayControllerDidTapLikeButton:(id)arg1 {
     CONFIRMREELSLIKE(orig_photoCellDidTapLike, arg1);
+    %orig;
 }
 - (void)gestureController:(id)arg1 didObserveDoubleTap:(id)arg2 {
     CONFIRMREELSLIKE(orig_photoCellGestureDoubleTap, arg1, arg2);
+    %orig;
 }
 %end
 %hook IGSundialViewerCarouselCell
 - (void)controlsOverlayControllerDidTapLikeButton:(id)arg1 {
     CONFIRMREELSLIKE(orig_carouselCellDidTapLike, arg1);
+    %orig;
 }
 - (void)gestureController:(id)arg1 didObserveDoubleTap:(id)arg2 {
     CONFIRMREELSLIKE(orig_carouselCellGestureDoubleTap, arg1, arg2);
+    %orig;
 }
 %end
 
@@ -106,23 +112,29 @@ static void (*orig_directThreadDidTapLike)(id, SEL);
 %hook IGCommentCellController
 - (void)commentCell:(id)arg1 didTapLikeButton:(id)arg2 {
     CONFIRMPOSTLIKE(orig_commentCellDidTapLike, arg1, arg2);
+    %orig;
 }
 - (void)commentCell:(id)arg1 didTapLikedByButtonForUser:(id)arg2 {
     CONFIRMPOSTLIKE(orig_commentCellDidTapLikedBy, arg1, arg2);
+    %orig;
 }
 - (void)commentCellDidLongPressOnLikeButton:(id)arg1 {
     CONFIRMPOSTLIKE(orig_commentCellDidLongPressLike, arg1);
+    %orig;
 }
 - (void)commentCellDidEndLongPressOnLikeButton:(id)arg1 {
     CONFIRMPOSTLIKE(orig_commentCellDidEndLongPressLike, arg1);
+    %orig;
 }
 - (void)commentCellDidDoubleTap:(id)arg1 {
     CONFIRMPOSTLIKE(orig_commentCellDidDoubleTap, arg1);
+    %orig;
 }
 %end
 %hook IGFeedItemPreviewCommentCell
 - (void)_didTapLikeButton {
     CONFIRMPOSTLIKE(orig_feedItemPreviewDidTapLike);
+    %orig;
 }
 %end
 
@@ -130,12 +142,15 @@ static void (*orig_directThreadDidTapLike)(id, SEL);
 %hook IGStoryFullscreenDefaultFooterView
 - (void)_handleLikeTapped {
     CONFIRMPOSTLIKE(orig_handleLikeTapped);
+    %orig;
 }
 - (void)_likeTapped {
     CONFIRMPOSTLIKE(orig_likeTapped);
+    %orig;
 }
 - (void)inputView:(id)arg1 didTapLikeButton:(id)arg2 {
     CONFIRMPOSTLIKE(orig_inputViewDidTapLike, arg1, arg2);
+    %orig;
 }
 
 // For some stupid reason they removed the "liketapped" methods on newer Instagram versions
@@ -176,6 +191,7 @@ static void (*orig_directThreadDidTapLike)(id, SEL);
 %hook IGDirectThreadViewController
 - (void)_didTapLikeButton {
     CONFIRMPOSTLIKE(orig_directThreadDidTapLike);
+    %orig;
 }
 %end
 

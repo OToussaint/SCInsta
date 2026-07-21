@@ -24,9 +24,7 @@ static void (*orig_followButtonTappedCell)(id, SEL, id, id);
         [SCIUtils showConfirmation:^(void) {                  \
             origFunc(selfCopy, cmdCopy, ##__VA_ARGS__);        \
         }];                                                   \
-    }                                                          \
-    else {                                                     \
-        %orig;                                                 \
+        return;                                               \
     }
 ////////////////////////////////////////////////////////
 // Follow button on profile page
@@ -38,47 +36,52 @@ static void (*orig_followButtonTappedCell)(id, SEL, id, id);
     if (UserFollowStatus == 2) {
         CONFIRMFOLLOW(orig_didPressFollowButton);
     }
-    else {
-        %orig;
-    }
+    %orig;
 }
 %end
 // Follow button on discover people page
 %hook IGDiscoverPeopleButtonGroupView
 - (void)_onFollowButtonTapped:(id)arg1 {
     CONFIRMFOLLOW(orig_onFollowButtonTapped, arg1);
+    %orig;
 }
 - (void)_onFollowingButtonTapped:(id)arg1 {
     CONFIRMFOLLOW(orig_onFollowingButtonTapped, arg1);
+    %orig;
 }
 %end
 // Suggested for you (home feed & profile) follow button
 %hook IGHScrollAYMFCell
 - (void)_didTapAYMFActionButton {
     CONFIRMFOLLOW(orig_didTapAYMFActionButton);
+    %orig;
 }
 %end
 %hook IGHScrollAYMFActionButton
 - (void)_didTapTextActionButton {
     CONFIRMFOLLOW(orig_didTapTextActionButton);
+    %orig;
 }
 %end
 // Follow button on reels
 %hook IGUnifiedVideoFollowButton
 - (void)_hackilyHandleOurOwnButtonTaps:(id)arg1 event:(id)arg2 {
     CONFIRMFOLLOW(orig_hackilyHandleOurOwnButtonTapsEvent, arg1, arg2);
+    %orig;
 }
 %end
 // Follow text on profile (when collapsed into top bar)
 %hook IGProfileViewController
 - (void)navigationItemsControllerDidTapHeaderFollowButton:(id)arg1 {
     CONFIRMFOLLOW(orig_navigationItemsControllerDidTapHeaderFollowButton, arg1);
+    %orig;
 }
 %end
 // Follow button on suggested friends (in story section)
 %hook IGStorySectionController
 - (void)followButtonTapped:(id)arg1 cell:(id)arg2 {
     CONFIRMFOLLOW(orig_followButtonTappedCell, arg1, arg2);
+    %orig;
 }
 %end
 // Follow all button in group chats (3+ members) people view
