@@ -1,5 +1,10 @@
 #import "../../Utils.h"
 
+// Raw original IMP captured before Logos swizzles it.
+// Needed because %orig cannot be reliably expanded inside a block that is
+// itself nested inside a message send argument.
+static void (*orig_refreshReels)(id, SEL, NSInteger, BOOL);
+
 %hook IGSundialPlaybackControlsTestConfiguration
 - (id)initWithLauncherSet:(id)set
                      tapToPauseEnabled:(_Bool)tapPauseEnabled
@@ -39,9 +44,10 @@
 
     if ([SCIUtils getBoolPref:@"refresh_reel_confirm"]) {
         NSLog(@"[SCInsta] Reel refresh triggered");
-        
-        [SCIUtils showConfirmation:^(void) { 
-            [self _refreshReelsWithParamsForNetworkRequest:arg1 userDidPullToRefresh:arg2]; 
+        id selfCopy = self;
+        SEL cmdCopy = _cmd;
+        [SCIUtils showConfirmation:^(void) {
+            orig_refreshReels(selfCopy, cmdCopy, arg1, arg2);
         }
                      cancelHandler:^(void) {
                          IGRefreshControl *_refreshControl = MSHookIvar<IGRefreshControl *>(self, "_refreshControl");
@@ -72,3 +78,13 @@
     }
 }
 %end
+
+%ctor {
+    Class sundialFeedVC = objc_getClass("IGSundialFeedViewController");
+    if (sundialFeedVC) {
+        Method m = class_getInstanceMethod(sundialFeedVC, @selector(_refreshReelsWithParamsForNetworkRequest:userDidPullToRefresh:));
+        if (m) orig_refreshReels = (void (*)(id, SEL, NSInteger, BOOL))method_getImplementation(m);
+    }
+
+    %init;
+}
